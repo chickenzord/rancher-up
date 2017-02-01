@@ -27,12 +27,13 @@ def main(ctx, show_config):
 @main.command()
 @click.pass_context
 @click.argument('service-fullname')
-def upgrade(ctx, service_fullname):
+@click.option('--always-pull', is_flag=True, default=False, help="Always pull before upgrade")
+@click.option('--image', type=str, help="Change docker image")
+def upgrade(ctx, service_fullname, always_pull, image):
     before(ctx)
 
     service = api.get_service_by_fullname(service_fullname)
     service_id = service['id']
-    launch_config = service['launchConfig']
 
     if service['state'] == 'upgraded':
         techo(service_fullname, "service is already upgraded, confirming...")
@@ -41,7 +42,11 @@ def upgrade(ctx, service_fullname):
         techo(service_fullname, "waiting for service to active...")
         api.service_wait_state(service_id, 'active')
 
-    techo(service_fullname, "upgrading service...")
+    from rancher.launch_config import from_service
+    if image is None: always_pull = True # no image implies re-pull
+    launch_config = from_service(service, always_pull=always_pull, image=image)
+
+    techo(service_fullname, "upgrading service using image '%s'..." % launch_config['imageUuid'])
     upgrade = api.service_upgrade(service_id, launch_config)
 
 if __name__ == '__main__':
