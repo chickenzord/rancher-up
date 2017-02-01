@@ -4,15 +4,13 @@ import click
 from rancher.config import Config
 from rancher.api import Api
 
-config = Config()
-api = Api(config)
-
 # tagged echo helper
 def techo(tag, message):
     click.secho("[%s]" % tag, bold=True, nl=False)
     click.echo(" %s" % message)
 
 def before(ctx):
+    config = ctx.obj['config']
     if ctx.obj['show_config'] or config.not_valid():
         techo('config', "RANCHER_URL: %s" % config.RANCHER_URL)
         techo('config', "RANCHER_ACCESS_KEY: %s" % config.RANCHER_ACCESS_KEY)
@@ -23,8 +21,14 @@ def before(ctx):
 
 @click.group()
 @click.pass_context
-@click.option('--show-config', is_flag=True, default=True, help='Print Rancher config to stdout?')
-def main(ctx, show_config):
+@click.option('--env-file', type=click.Path(exists=True), help='Alternate env file to load')
+@click.option('--show-config', is_flag=True, default=True, help='Print Rancher config to stdout')
+def main(ctx, env_file, show_config):
+    if env_file:
+        ctx.obj['config'] = Config(env_file=env_file)
+    else:
+        ctx.obj['config'] = Config()
+
     ctx.obj['show_config'] = show_config
 
 @main.command()
@@ -35,6 +39,8 @@ def main(ctx, show_config):
 @click.option('--wait/--no-wait', default=False, help="Wait upgrade to finish before exit")
 def upgrade(ctx, service_fullname, always_pull, image, wait):
     before(ctx)
+
+    api = Api(ctx.obj['config'])
 
     service = api.get_service_by_fullname(service_fullname)
     service_id = service['id']
