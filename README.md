@@ -4,7 +4,11 @@ simple rancher command line utilities
 
 ## requirements
 
-python 3 (tested on 3.5.2)
+* python version: 3 (tested on 3.5.2)
+* environment variables (can be put in `.env` file):
+  * `RANCHER_URL`
+  * `RANCHER_ACCESS_KEY`
+  * `RANCHER_SECRET_KEY`
 
 ## howto
 
