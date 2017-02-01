@@ -13,10 +13,13 @@ def techo(tag, message):
     click.echo(" %s" % message)
 
 def before(ctx):
-    if ctx.obj['show_config']:
+    if ctx.obj['show_config'] or config.not_valid():
         techo('config', "RANCHER_URL: %s" % config.RANCHER_URL)
         techo('config', "RANCHER_ACCESS_KEY: %s" % config.RANCHER_ACCESS_KEY)
         techo('config', "RANCHER_SECRET_KEY: ***")
+
+    if config.not_valid():
+        raise Exception("Invalid config")
 
 @click.group()
 @click.pass_context
