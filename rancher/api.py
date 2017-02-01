@@ -18,13 +18,20 @@ class Api(object):
     def get_stack_by_name(self, name):
         params = { 'name': name }
         response = requests.get(self.stacks_url, params=params, auth=self.auth)
-        return response.json()['data'][0]
+        stacks = response.json()['data']
+        if len(stacks) == 0:
+            raise Exception("%s: stack not found" % name)
+
+        return stacks[0]
 
     def get_service_by_fullname(self, fullname):
         # fullname = "{stack_name}/{service_name}"
-        stack_name = fullname.split('/')[0]
-        service_name = fullname.split('/')[1]
-
+        tokens = fullname.split('/')
+        if len(tokens) != 2:
+            msg = "Invalid service name, use '%s'" % 'stack_name/service_name'
+            raise Exception(msg)
+        stack_name = tokens[0]
+        service_name = tokens[1]
         stack = self.get_stack_by_name(stack_name)
 
         params = {
@@ -32,7 +39,11 @@ class Api(object):
             'environmentId': stack['id']
             }
         response = requests.get(self.services_url, params=params, auth=self.auth)
-        return response.json()['data'][0]
+        services = response.json()['data']
+        if len(services) == 0:
+            msg = "Service '%s' not found in stack '%s'" % (service_name, stack_name)
+            raise Exception(msg)
+        return services[0]
 
     def get_service_by_id(self, id):
         service_url = "%s/%s" % (self.services_url, id)
