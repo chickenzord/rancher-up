@@ -29,7 +29,8 @@ def main(ctx, show_config):
 @click.argument('service-fullname')
 @click.option('--always-pull', is_flag=True, default=False, help="Always pull before upgrade")
 @click.option('--image', type=str, help="Change docker image")
-def upgrade(ctx, service_fullname, always_pull, image):
+@click.option('--wait/--no-wait', default=False, help="Wait upgrade to finish before exit")
+def upgrade(ctx, service_fullname, always_pull, image, wait):
     before(ctx)
 
     service = api.get_service_by_fullname(service_fullname)
@@ -48,6 +49,11 @@ def upgrade(ctx, service_fullname, always_pull, image):
 
     techo(service_fullname, "upgrading service using image '%s'..." % launch_config['imageUuid'])
     upgrade = api.service_upgrade(service_id, launch_config)
+
+    if wait:
+        techo(service_fullname, "waiting for upgrade to finish...")
+        api.service_wait_state(service_id, 'upgraded')
+        techo(service_fullname, "upgrade finished")
 
 if __name__ == '__main__':
     main(obj={})
